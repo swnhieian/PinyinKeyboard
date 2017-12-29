@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.inputmethodservice.KeyboardView
+    xmlns:andoird="http://schemas.android.com/apk/res/android"
+    andoird:id="@+id/keyboard"
+    andoird:layout_width="match_parent"
+    andoird:layout_height="wrap_content"
+    andoird:layout_alignParentBottom="true"
+    andoird:keyPreviewLayout="@layout/preview"
+    />
