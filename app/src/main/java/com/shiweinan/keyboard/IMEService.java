@@ -75,6 +75,8 @@ public class IMEService extends InputMethodService implements KeyboardView.OnKey
     private void updateCandidates() {
         String ret = "";
         List<String> seg = predictAlgorithm.predict(touchPoints);
+
+
         for (int i=0; i<touchPoints.size(); i++) {
             ret += getRawInput(touchPoints.get(i).x, touchPoints.get(i).y);
         }
@@ -84,6 +86,7 @@ public class IMEService extends InputMethodService implements KeyboardView.OnKey
             pinyinList.add(s);
         }
         mCandidateContainer.setSuggestions(pinyinList);
+        mCandidateContainer.setPinyinStr(ret);
         setCandidatesViewShown(true);
         if (Settings.getShowTouchPoints()) {
             mKeyboardView.drawPoints(touchPoints);
@@ -103,15 +106,34 @@ public class IMEService extends InputMethodService implements KeyboardView.OnKey
     private void enter() {
         if (touchPoints.size() > 0) {
             getCurrentInputConnection().finishComposingText();
+
+            if (Settings.getShowPinyinSegmentation()) {
+
+                List<PinyinSegmentation> pyseg = predictAlgorithm.getPinyinSegment(touchPoints, 0);
+                //System.out.println("===========" + seg.size());
+                getCurrentInputConnection().commitText("\n", 1);
+                for (PinyinSegmentation s : pyseg) {
+                    getCurrentInputConnection().commitText(s.getSegments() + " ", 1);
+                    //s.showSegments();
+                }
+//            List<String> ret = new ArrayList<>();
+//            for (PinyinSegmentation s : seg.subList(0, Math.min(5, seg.size()))) {
+//                ret.add(s.getSegments());
+//            }
+            }
+            
             touchPoints.clear();
             updateCandidates();
+
         } else {
             getCurrentInputConnection().sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER));
         }
     }
     private void space() {
         if (touchPoints.size() > 0) {
-            getCurrentInputConnection().commitText(pinyinList.get(0)+" ", 1);
+            if (pinyinList.size() > 0) {
+                getCurrentInputConnection().commitText(pinyinList.get(0) + " ", 1);
+            }
             touchPoints.clear();
         } else {
             getCurrentInputConnection().commitText(" ", 1);
@@ -126,6 +148,9 @@ public class IMEService extends InputMethodService implements KeyboardView.OnKey
 
     public List<Keyboard.Key> getKeys() {
         return mKeyboard.getKeys();
+    }
+    public int getKeyboardHeight() {
+        return mKeyboardView.getMeasuredHeight();
     }
 
     HashMap<Integer, ScheduledExecutorService> schedulers = new HashMap<>();

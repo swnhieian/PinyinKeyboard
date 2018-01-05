@@ -29,6 +29,10 @@ public class Settings {
                 .getBoolean(context.getString(R.string.pref_key_show_points), false);
         //return showTouchPoints;
     }
+    public static boolean getShowPinyinSegmentation() {
+        return PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(context.getString(R.string.pref_key_show_pinyinseg), false);
+    }
 //    public static void setShowTouchPoints(boolean v) {
 //        if (showTouchPoints == v) return;
 //        showTouchPoints = v;

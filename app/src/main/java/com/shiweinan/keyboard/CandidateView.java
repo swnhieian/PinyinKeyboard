@@ -5,6 +5,9 @@ import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.drawable.Drawable;
+import android.support.v4.content.res.ResourcesCompat;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Pair;
 import android.view.Gravity;
@@ -29,7 +32,17 @@ public class CandidateView extends View {
     private IMEService service;
     public CandidateView(Context context) {
         super(context);
-        //Log.d(this.getClass().toString(), "CandidateView: ");
+        init(context);
+    }
+    public CandidateView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        init(context);
+    }
+    public CandidateView(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+        init(context);
+    }
+    private void init(Context context) {
         Resources r = context.getResources();
         mCandidateVPadding = r.getDimensionPixelSize(R.dimen.candidateVerticalPadding);
         setBackgroundColor(r.getColor(R.color.candidateBackground, null)); // 设置背景色
@@ -80,6 +93,10 @@ public class CandidateView extends View {
             canvas.drawText(suggestion, x + X_GAP, y, mPaint);
             x += wordWidth;
         }
+        int morePadding = 50;
+        Drawable d = ResourcesCompat.getDrawable(getResources(), R.drawable.ic_arrow_drop_down_24dp, null);
+        d.setBounds(1080 - (int)mPaint.getTextSize() - morePadding, 0, 1080 - morePadding, (int)mPaint.getTextSize());
+        d.draw(canvas);
     }
     public void setSuggestions(List<String> suggestions) {
         //Log.d(this.getClass().toString(), "setSuggestions: ");
@@ -102,13 +119,16 @@ public class CandidateView extends View {
                     return true;
                 }
             }
-            if (me.getX() > 1080) {
-                int width = 1080;
-                int height = 500;
-                CandidateView candidatePage = new CandidateView(this.getContext());
-                candidatePage.setBackgroundColor(Color.BLACK);
-                PopupWindow popupWindow = new PopupWindow(candidatePage, width, height);
-                popupWindow.showAtLocation(this, Gravity.BOTTOM, 0, 0);
+            if (me.getX() > 2000) {
+                CandidatePage candidatePage = new CandidatePage(this.getContext());
+                //CandidateView candidatePage = new CandidateView(this.getContext());
+                //candidatePage.setBackgroundColor(Color.BLACK);
+                //candidatePage.showAtLocation(this, Gravity.BOTTOM, 0, 0);
+                candidatePage.setWidth(this.getWidth());
+                candidatePage.setHeight(service.getKeyboardHeight());
+                System.out.println("KBD:height" + service.getKeyboardHeight());
+                candidatePage.showAsDropDown(this, 0, 0);
+                candidatePage.setPinyin(mSuggestions);
             }
         }
 

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#f0f000"
+    android:padding="0dp"
+    android:layout_margin="0dp">
+    <ListView
+        android:layout_width="150px"
+        android:layout_height="match_parent"
+        android:background="@color/candidate"
+        android:id="@+id/pinyinListView"></ListView>
+    <View
+        android:layout_width="1dip"
+        android:layout_height="match_parent"
+        android:layout_gravity="center_horizontal"
+        android:background="@android:color/white" />
+    <GridView
+        android:layout_width="900px"
+        android:layout_height="match_parent"
+        android:background="@color/candidateBackground"></GridView>
+
+</LinearLayout>

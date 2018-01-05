@@ -10,6 +10,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.CollationElementIterator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -55,22 +56,97 @@ public class PredictAlgorithm {
             e.printStackTrace();
         }
         touchModel = tm;
+        loadChineseFreqDict(ims);
     }
-    public List<String> predict(List<TouchPoint> points) {
-        touchModel.getLogCache(points);
+    HashMap<String, List<ChineseLemma>> ChineseLM = new HashMap<>();
+    private void loadChineseFreqDict(InputMethodService ims) {
+        String str = null;
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(ims.getAssets().open("rawdict_utf8_65105_logfreq.txt")));
+            while ((str = br.readLine()) != null) {
+                String[] line = str.split(" ");
+                assert(line.length >= 4);
+                ChineseLemma temp = new ChineseLemma(line);
+                String first = temp.getFirstPinyin();
+                if (!ChineseLM.keySet().contains(first)) {
+                    ChineseLM.put(first, new ArrayList<ChineseLemma>());
+                }
+                ChineseLM.get(first).add(temp);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-        List<PinyinSegmentation> seg = getPinyinSegment(points, 0);
-        System.out.println("==========="+seg.size());
-        for (PinyinSegmentation s:seg) {
+    public List<String> predict(List<TouchPoint> points) {
+        //touchModel.getLogCache(points);
+
+
+
+
+
+        return predictWithChinese(points);
+        //return ret;
+    }
+    public List<String> predictWithChinese(List<TouchPoint> points) {
+
+        List<Pair<String, Double>> split = new ArrayList<>();
+        for (String pinyin: pinyinMap.keySet()) {
+            if (pinyin.length() > points.size()) continue;
+            List<TouchPoint> tp = points.subList(0, pinyin.length());
+            double prob = touchModel.getLogProbability(tp, pinyin) + pinyinMap.get(pinyin);
+            split.add(new Pair<>(pinyin, prob));
+        }
+        Collections.sort(split, new Comparator<Pair<String, Double>>() {
+            @Override
+            public int compare(Pair<String, Double> stringDoublePair, Pair<String, Double> t1) {
+                return t1.second.compareTo(stringDoublePair.second);
+            }
+        });
+
+        List<Pair<ChineseLemma, Double>> chSplit = new ArrayList<>();
+        int prefixSize = Math.min(10, split.size());
+        for (int i=0; i<prefixSize; i++) {
+            if (!ChineseLM.keySet().contains(split.get(i).first)) continue;
+            for (ChineseLemma cl: ChineseLM.get(split.get(i).first)) {
+                if (cl.getPointSize() > points.size()) continue;
+                List<TouchPoint> tp = points.subList(0, cl.getPointSize());
+                double prob = touchModel.getLogProbability(tp, cl.getPinyinString()) + cl.getLogProb() / cl.getCharacterLength();
+                if (cl.getPointSize() < points.size()) {
+                    prob *= 2;
+                }
+                if (prob > -20) {
+                    chSplit.add(new Pair<>(cl, prob));
+                }
+            }
+        }
+        System.out.println("chinese length:" + chSplit.size());
+        Collections.sort(chSplit, new Comparator<Pair<ChineseLemma, Double>>() {
+            @Override
+            public int compare(Pair<ChineseLemma, Double> chineseLemmaDoublePair, Pair<ChineseLemma, Double> t1) {
+                return t1.second.compareTo(chineseLemmaDoublePair.second);
+            }
+        });
+        List<String> ret = new ArrayList<>();
+        for (int i=0; i<Math.min(10, chSplit.size()); i++) {
+            System.out.println(chSplit.get(i).first.getCharacter() + " " +
+                               chSplit.get(i).first.getLogProb() + " " +
+                               chSplit.get(i).second);
+        }
+        if (chSplit.size() == 0) return ret;
+        ChineseLemma first = chSplit.get(0).first;
+        List<TouchPoint> remainingPoints = points.subList(first.getPointSize(), points.size());
+        List<PinyinSegmentation> pinyinSeg = getPinyinSegment(remainingPoints, 0);
+        for (PinyinSegmentation s:pinyinSeg) {
             s.showSegments();
         }
-        List<String> ret = new ArrayList<>();
-        for (PinyinSegmentation s:seg.subList(0, Math.min(5, seg.size()))) {
-            ret.add(s.getSegments());
+        ret.add(first.getCharacter() + pinyinSeg.get(0).getSegments());
+        for (int i=1; i<Math.min(10, chSplit.size()); i++) {
+            ret.add(chSplit.get(i).first.getCharacter());
         }
         return ret;
     }
-    private List<PinyinSegmentation> getPinyinSegment(List<TouchPoint> points, int calculated) {
+    public List<PinyinSegmentation> getPinyinSegment(List<TouchPoint> points, int calculated) {
         if (points.size() == 0) {
             List<PinyinSegmentation> ret = new ArrayList<>();
             ret.add(new PinyinSegmentation());
@@ -80,8 +156,8 @@ public class PredictAlgorithm {
         for (String pinyin : pinyinMap.keySet()) {
             if (pinyin.length() > points.size()) continue;
             List<TouchPoint> p = points.subList(0, pinyin.length());
-            //double prob = touchModel.getLogProbability(p, pinyin) + pinyinMap.get(pinyin);
-            double prob = touchModel.getCachedLogProbability(calculated, pinyin) + pinyinMap.get(pinyin);
+            double prob = touchModel.getLogProbability(p, pinyin) + pinyinMap.get(pinyin);
+            //double prob = touchModel.getCachedLogProbability(calculated, pinyin) + pinyinMap.get(pinyin);
             split.add(new Pair<>(pinyin, prob));
         }
         Collections.sort(split, new Comparator<Pair<String, Double>>() {

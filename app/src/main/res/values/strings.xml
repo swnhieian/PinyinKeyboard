@@ -80,5 +80,6 @@
 
     <string name="pref_key_show_points">Pref_Key_Show_Points</string>
     <string name="pref_key_use_bigram">Pref_Key_Use_Bigram</string>
+    <string name="pref_key_show_pinyinseg">Pref_Key_Show_PinyinSeg</string>
 
 </resources>

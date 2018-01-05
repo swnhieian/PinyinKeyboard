@@ -10,6 +10,11 @@
         android:key="@string/pref_key_use_bigram"
         android:title="UseBigram" />
 
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="@string/pref_key_show_pinyinseg"
+        android:title="Show Pinyin Segmentation" />
+
     <!-- A 'parent' preference, which enables/disables child preferences (below)
          when checked/unchecked. -->
     <!--<SwitchPreference-->
